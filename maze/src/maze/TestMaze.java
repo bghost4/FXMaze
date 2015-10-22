@@ -2,6 +2,7 @@ package maze;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -9,7 +10,6 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
-
 import javafx.concurrent.Task;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -331,11 +331,17 @@ public class TestMaze extends Application {
 		playerLayer.getGraphicsContext2D().fillRect(playerX.get()*cellsize+2,playerY.get()*cellsize+2,cellsize-4,cellsize-4);
 	}
 	
+	protected int spancount = 0;
+	protected ArrayList<MapCell> cellsWithOptions;
+	
 	public MapCell generate() {
 		//Start at 0,0;
+		
 		if(last == null) {
 			lx = 0;
 			ly = 0;
+			cellsWithOptions = new ArrayList<>();
+			spancount = 0;
 		} 
 
 			MapCell c = myCanvas.getValue(lx,ly);
@@ -346,25 +352,36 @@ public class TestMaze extends Application {
 			}
 
 			List<Dir> a = myCanvas.available(lx,ly);
+			if(a.size() > 1) {
+				cellsWithOptions.add(c);
+			}
 			if(myCanvas.getMapHeight() == ly && myCanvas.getMapWidth() == lx) {
 				a.clear();
 				c.setEnd();
 			}
-			if(a.size() == 0) {
+			if(a.size() == 0 || spancount > 10) {
+				if(spancount > 10) {
+					System.out.println("Spancount reached");
+					spancount = 0; 
+				}
 				if(myCanvas.completed()) {
 					//c.setEnd();
 					myCanvas.setValue(lx,ly,c);
 				} else {
 					//Backtrack until we find a cell with available Directions
 					updatedCells.add(c.getCoord());
+					Random r = new Random(txtSeed.getText().hashCode());
 					while(a.size() < 1) {
-						c = c.getParent();
+						int index = r.nextInt(cellsWithOptions.size());
+						c = cellsWithOptions.get(index);
+						//c = c.getParent();
 						lx = c.getCoord().x;
 						ly = c.getCoord().y;
 						a = myCanvas.available(lx,ly);
 					}
 				}
 			} 
+			spancount++;
 			
 			
 			
