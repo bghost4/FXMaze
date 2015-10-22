@@ -75,7 +75,7 @@ public class BoardCanvas<T> extends Canvas {
 			this.setWidth(w.get()*(int)newValue);
 			this.setHeight(h.get()*(int)newValue);
 			//initializeBoard();
-			renderBoard();
+			//renderBoard();
 		});
 		
 	}
@@ -171,15 +171,13 @@ public class BoardCanvas<T> extends Canvas {
 	}
 	
 	public void renderBoard(List<Coord> l) {
+		if(this.isVisible()) {
+			this.getScene().getWindow().sizeToScene();
+		}
 		//System.out.println(Thread.currentThread().getName());
 		Coord[] a = l.toArray(new Coord[] {} );
 		for(Coord cell : a ) {
-			T value = null;
-			try {
-				value = getValue(cell.x,cell.y);
-			} catch(Exception e) {
-				
-			}
+			T value = getValue(cell.x,cell.y);
 			ren.renderCell(getGraphicsContext2D(), cell.x, cell.y, cellsize.get(), value);
 		}
 	}
@@ -192,14 +190,8 @@ public class BoardCanvas<T> extends Canvas {
 		for(int y=0; y < h.get(); y++) {
 			for(int x=0; x < w.get(); x++) {
 				GraphicsContext g2d = this.getGraphicsContext2D();
-				T value = null;
-				try {
-					value = getValue(x,y);
-				} catch(Exception e) {
-					
-				}
-					ren.renderCell(g2d, x, y, cellsize.get(), value );
-				
+				T value = getValue(x,y);
+				ren.renderCell(g2d, x, y, cellsize.get(), value );
 			}
 		}
 		long end = System.nanoTime();
