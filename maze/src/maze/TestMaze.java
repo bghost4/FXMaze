@@ -501,6 +501,7 @@ public class TestMaze extends Application {
 		
 		public genTask() {
 			this.showGeneration = showMazeGeneration.getValue();
+			mainWindow.setTitle("FX Maze - Level: "+Level);
 			init();
 		}
 		
@@ -508,7 +509,7 @@ public class TestMaze extends Application {
 		protected Void call() throws Exception {
 			lx = 0; ly = 0; last = null;
 			if(!showGeneration) {
-				
+				timeline.stop();
 			}
 			while(!board.completed() && !this.isCancelled() ) {
 				updatedCells.add(generate().getCoord());
@@ -553,11 +554,12 @@ public class TestMaze extends Application {
 				Thread t = new Thread(taskHandle);
 				t.start();
 			});
+			
+			MenuItem miLevelReset = new MenuItem("Level Reset to 1");
+			//miLevelReset.	
+			
 			mOptions.getItems().addAll(miGameOptions,miRestart);
-			
-			
-			
-		
+
 		Menu mHelp = new Menu("Help");
 			MenuItem miAbout = new MenuItem("About");
 			MenuItem miHelp = new MenuItem("Show Help");
