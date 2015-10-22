@@ -485,13 +485,11 @@ public class TestMaze extends Application {
 			}
 			this.setOnFailed( (ws) -> { System.err.println("Generation Failed"); });
 			this.setOnCancelled( (ws) -> { System.err.println("Generation Canceled"); });
-			//taskHandle.setOnSucceeded( (ws) -> { System.err.println("Generation Sucess"); });
 			this.setOnSucceeded( (ws) -> { 
 				sp.getChildren().remove(lblStart);
 				if(!showGeneration) { timeline.play(); }
 				play321go(sp);
 			});
-
 			
 			board.setSeed(txtSeed.getText(),Level);
 			 
