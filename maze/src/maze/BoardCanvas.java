@@ -139,10 +139,9 @@ public class BoardCanvas<T> extends Canvas {
 		//renderBoard();
 	}
 	
-	public void setSeed(String strSeed) {
-		
+	public void setSeed(String strSeed,int Level) {
 		int hc = strSeed.hashCode();
-		myRandom.setSeed(hc);
+		myRandom.setSeed(hc+Level);
 	}
 	
 	public void reset() {
