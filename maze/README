@@ -1,13 +1,16 @@
 A JavaFX project to generate and play a maze.
 
+
 Music Files by Eric Skiff
 CC http://ericskiff.com/music/
 
 tada.wav from SoundBible.com http://soundbible.com/1003-Ta-Da.html Mike Koenig
-blop.wav from SoundBible.com http://soundbible.com/2067-Blop.html Mark DiAngelo
+
 woosh.wav from SoundBible.com http://soundbible.com/2068-Woosh.html Mark DiAngelo
 tone.wav from SoundBible.com http://soundbible.com/1815-A-Tone.html "His Self" (Public Domain Sound)
 tonehp.wav modified version of above, pitch shifted
+blop.wav Changed to modified version of tone
+DualToneWin.wav modified version of tone.wav
 
 
 

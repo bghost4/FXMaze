@@ -74,7 +74,7 @@ public class BoardCanvas<T> extends Canvas {
 		cellsize.addListener( (ob,oldValue,newValue) -> {
 			this.setWidth(w.get()*(int)newValue);
 			this.setHeight(h.get()*(int)newValue);
-			initializeBoard();
+			//initializeBoard();
 			//renderBoard();
 		});
 		

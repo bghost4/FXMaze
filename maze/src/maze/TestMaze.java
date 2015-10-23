@@ -12,9 +12,9 @@ import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
+
 import javafx.application.Application;
-import javafx.collections.ObservableMap;
+
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
@@ -22,7 +22,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.Parent;
+
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
@@ -43,7 +43,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -51,14 +51,15 @@ import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
+
 import javafx.scene.text.Font;
 import javafx.scene.web.WebView;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 
 public class TestMaze extends Application {
@@ -67,152 +68,102 @@ public class TestMaze extends Application {
 	protected MapCell last;
 	protected int lx,ly;
 	
-	protected Coord playerCoord  = new Coord();
-	protected SimpleDoubleProperty playerX = new SimpleDoubleProperty(0),playerY = new SimpleDoubleProperty(0);
+	//Layer the player gets Rendered on
 	protected Canvas playerLayer;
-
-	//This one tracks changes on the maze size, and seed to see if the maze needs to be regenerated
-	protected Boolean mazePropertyChange = false;
 	
+	//Handle to generation task
 	protected Task<Void> taskHandle = null;
+	
+	//Loaded Font
 	protected Font lblFont;
-	protected Label lblAnim;
-	protected Timeline pt;
 	
-	Timeline timeline;
-	
-	protected AudioClip tone1,tone2;
-	
-	protected ArrayList<Coord> updatedCells = new ArrayList<>();
-	
-	protected Spinner<Integer> spnWidth,spnHeight,spnCell; 
-	protected TextField txtSeed;
-	
-	protected MediaPlayer mp;
-	
-	//Level Counter
-	protected int Level = 1;
-	
-	protected Dialog<ButtonType> dlgGameOptions = null;
-	protected Dialog<Void> dlgCredits = null;
-	protected Dialog<Void> dlgHelp = null;
-	
-	protected Stage mainWindow;
-	
-	protected final SimpleIntegerProperty 
-		StretchLength = new SimpleIntegerProperty(10),
-		CellsWide = new SimpleIntegerProperty(10),
-		CellsHigh = new SimpleIntegerProperty(10),
-		CellSize = new SimpleIntegerProperty(25);
-		
-	protected final SimpleBooleanProperty 
-		playMusicProperty = new SimpleBooleanProperty(false),
-		playProperty = new SimpleBooleanProperty(false),
-		showMazeGeneration = new SimpleBooleanProperty(true);
-	protected final SimpleDoubleProperty volumeProperty = new SimpleDoubleProperty();
-		
 	protected StackPane sp;
 	protected Label lblStart;
 	
-	ArrayList<MediaPlayer> playList;
+	//Animated Label for 3,2,1 go
+	protected Label lblAnim;
 	
-	@Override
-	public void start(Stage primaryStage) throws Exception {
+	protected Timeline pt;
+	protected Timeline timeline;
+	
+	protected AudioClip tone1,tone2,err,win;
+	
+	protected ArrayList<Coord> updatedCells = new ArrayList<>();
+	
+	protected final SimpleBooleanProperty playProperty = new SimpleBooleanProperty(false);
+	
+	///Dialogs
+	protected final GameOptionsDialog dlgGameOptions = new GameOptionsDialog();
+	protected final Dialog<Void> dlgCredits = new Dialog<>();
+	protected final Dialog<Void> dlgHelp = new Dialog<>();
+	
+	protected Stage mainWindow;
+	
+	protected Coord playerCoord  = new Coord();
+	protected SimpleDoubleProperty 
+		playerX = new SimpleDoubleProperty(0),
+		playerY = new SimpleDoubleProperty(0);
+	
+	//Level Counter
+	protected int Level = 1;
+
+	protected ArrayList<MediaPlayer> playList;
+	
+	protected void loadMusic() {
 		playList = new ArrayList<>();
-		mainWindow = primaryStage;
-				
+		MediaPlayer mp;	
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_06_Searching.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
-		mp.volumeProperty().bind(volumeProperty);
+		mp.volumeProperty().bind(dlgGameOptions.musicVolumeProperty());
 		playList.add(mp);
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_05_Come_and_Find_Me.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
-		mp.volumeProperty().bind(volumeProperty);
+		mp.volumeProperty().bind(dlgGameOptions.musicVolumeProperty());
 		playList.add(mp);
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_Prologue.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
-		mp.volumeProperty().bind(volumeProperty);
+		mp.volumeProperty().bind(dlgGameOptions.musicVolumeProperty());
 		playList.add(mp);
 		
-		playerCoord.x = 0;
-		playerCoord.y = 0;
-		
-		playerLayer = new Canvas();
-		
-		pt = new Timeline();
-		pt.setCycleCount(1);
-		
-		AudioClip err = new AudioClip(this.getClass().getResource("resources/blop.wav").toString());
-		AudioClip win = new AudioClip(this.getClass().getResource("resources/DualToneWin.wav").toString());
+		err = new AudioClip(this.getClass().getResource("resources/blop.wav").toString());
+		win = new AudioClip(this.getClass().getResource("resources/DualToneWin.wav").toString());
 		tone1 = new AudioClip(this.getClass().getResource("resources/tone.wav").toString());
 		tone2 = new AudioClip(this.getClass().getResource("resources/Tonehp.wav").toString());
+	}
+	
+	protected void initStuff() {
+		
 		lblFont = Font.loadFont(this.getClass().getResourceAsStream("resources/OrbitronLight.ttf"), 22);
 		
-		txtSeed = new TextField();
+		initObjects();
 		
+		loadMusic();
+		buildMenu();
+		
+		buildCredits();
+		buildHelp();
+		
+		createBindings();
+		
+		createAnimations();
+
 		loadProperties();
 		
-		playerLayer.addEventHandler(MouseEvent.ANY, (e) -> playerLayer.requestFocus() );
-		playerLayer.setFocusTraversable(true);
-		
-		
-		CellSupplier<MapCell> cs = (x,y) -> { 
-			//System.out.println("New Map Cell: "+x+","+y);
-			MapCell mc = new MapCell();
-			mc.getCoord().x = x;
-			mc.getCoord().y = y;
-			return mc;
-		};
-		
-		CellEvaluator<MapCell> ce = (b) -> {
-			if( b == null) { return false; } else {
-			return b.getVisited(); } };
-		
-		CellRenderer<MapCell> cr = (g,x,y,cellsize,d) -> {
-			x = x*cellsize;
-			y = y*cellsize;
-			
-			g.setLineWidth(2.0);
-			
-			if(d != null && d.getVisited()) {
-				if(d.end == true) {
-					g.setFill(Color.RED);
-				} else if(d.start == true) {
-					g.setFill(Color.GREEN);
-				} else {
-					g.setFill(Color.ORANGE);
-				}
-				g.fillRect(x, y, cellsize, cellsize);
-				
-				//Draw Walls
-				List<Dir> dirs = d.getDirs();
-				if( !dirs.contains(Dir.NORTH) ) {
-					//Draw northern Wall
-					g.strokeLine(x,y,x+cellsize,y);
-				}
-				if(!dirs.contains(Dir.SOUTH)) {
-					//Draw Southern wall
-					g.strokeLine(x, y+cellsize, x+cellsize, y+cellsize);
-				}
-				if(!dirs.contains(Dir.EAST)) {
-					//Draw Eastern wall
-					g.strokeLine(x+cellsize, y, x+cellsize, y+cellsize);
-				}
-				if(!dirs.contains(Dir.WEST)) {
-					//Draw western wall
-					g.strokeLine(x,y,x,y+cellsize);
-				}
-				
-			} else {
-				g.setFill(Color.CADETBLUE);
-				g.fillRect(x, y, cellsize, cellsize);
-				g.strokeRect(x, y, cellsize, cellsize);
-			}
-		};
-		
-		board = new BoardCanvas<>(cs,ce,cr);
-		
-		playMusicProperty.addListener((ob,oldValue,newValue) -> {
+		createListeners();
+	}
+	
+	
+
+	private void createBindings() {
+		playerLayer.widthProperty().bind(board.widthProperty());
+		playerLayer.heightProperty().bind(board.heightProperty());
+		board.getCellSizeProperty().bind(dlgGameOptions.cellSizeProperty());
+		board.getMapWidthProperty().bind(dlgGameOptions.cellsWideProperty());
+		board.getMapHeightProperty().bind(dlgGameOptions.cellsHighProperty());
+	}
+
+	protected void createListeners() {
+		dlgGameOptions.playMusicProperty().addListener((ob,oldValue,newValue) -> {
 			if(newValue && playProperty.get()) {
 				//if we are playing, start the music, else just set the property
 				playList.get(Level % playList.size()).play();
@@ -220,6 +171,26 @@ public class TestMaze extends Application {
 				playList.forEach( (media) -> media.stop() ); 
 			}
 		}) ;
+		
+		playProperty.addListener( (ob,oldValue,newValue) -> {
+			if(newValue && dlgGameOptions.playMusicProperty().get()) {
+				int levelSong = Level % playList.size();
+				playList.get(levelSong).play();
+			} else  {
+				playList.forEach((media) -> media.stop() );  
+				}
+		} );
+		
+		
+		
+		createInputListeners();
+		
+	}
+	
+	private void createInputListeners() {
+		
+		playerLayer.addEventHandler(MouseEvent.ANY, (e) -> playerLayer.requestFocus() );
+		playerLayer.setFocusTraversable(true);
 		
 		playerLayer.setOnKeyPressed( (keyEvent) -> { keyEvent.consume(); });
 		playerLayer.setOnKeyReleased( (keyEvent) -> {
@@ -283,71 +254,6 @@ public class TestMaze extends Application {
 			keyEvent.consume();
 		});
 		
-		spnWidth = new Spinner<>(10,512,CellsWide.get(),1);
-			CellsWide.bind(spnWidth.valueProperty());
-			board.getMapWidthProperty().bind(CellsWide);
-		spnHeight = new Spinner<>(10,512,CellsHigh.get(),1);
-			CellsHigh.bind(spnHeight.valueProperty());
-			board.getMapHeightProperty().bind(CellsHigh);
-		spnCell = new Spinner<>(5,64,CellSize.get(),1);
-			CellSize.bind(spnCell.valueProperty());
-			board.getCellSizeProperty().bind(CellSize);
-		
-		Button g = new Button("Generate");
-		g.setOnAction((action) -> { 
-			if(taskHandle == null || taskHandle.isDone()) {
-				taskHandle = new genTask();
-				Thread t = new Thread(taskHandle);
-				t.setDaemon(true);
-				t.start();
-			} else {
-				//Still Running
-			}
-		} );
-		
-		//Update every 32 ms ~ 30FPS
-		timeline = new Timeline( new KeyFrame( Duration.millis(32) , 
-				ae ->  { 
-					board.renderBoard(updatedCells);
-					updatedCells.clear();
-					renderPlayer();
-					} ) );
-
-		timeline.setCycleCount(Animation.INDEFINITE);
-		timeline.play();
-		
-		playerLayer.widthProperty().bind(board.widthProperty());
-		playerLayer.heightProperty().bind(board.heightProperty());
-
-		playProperty.addListener( (ob,oldValue,newValue) -> {
-			if(newValue && playMusicProperty.get()) {
-				int levelSong = Level % playList.size();
-				playList.get(levelSong).play();
-			} else  {
-				playList.forEach((media) -> media.stop() );  
-				}
-		} );
-		
-		
-		
-		//vb.getChildren().add(hb);
-		
-		VBox vb = new VBox();
-		
-		sp = new StackPane();
-		
-		Group gr = new Group();
-		gr.getChildren().add(board);
-		gr.getChildren().add(playerLayer);
-		
-		BackgroundFill bgFill = new BackgroundFill(Color.BLACK,new CornerRadii(10),new Insets(-5));
-		Background lblBackground = new Background(bgFill);
-		
-		lblStart = new Label("Start");
-		lblStart.setFont(lblFont);
-		lblStart.setTextFill(Color.CADETBLUE);
-		lblStart.setBackground(new Background(bgFill));
-
 		lblStart.setOnMouseClicked( (mouseEvent) -> {
 			FadeTransition ft = new FadeTransition(Duration.millis(500),lblStart);
 			ft.setFromValue(1.0f);
@@ -366,6 +272,126 @@ public class TestMaze extends Application {
 			ft.play();
 		});
 		
+		
+	}
+
+	private void buildHelp() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void initObjects() {
+		playerCoord.x = 0;
+		playerCoord.y = 0;
+		
+		playerLayer = new Canvas();
+
+		createBoard();
+		
+		BackgroundFill bgFill = new BackgroundFill(Color.BLACK,new CornerRadii(10),new Insets(-5));
+		Background lblBackground = new Background(bgFill);
+		
+		lblStart = new Label("Start");
+		lblStart.setFont(lblFont);
+		lblStart.setTextFill(Color.CADETBLUE);
+		lblStart.setBackground(new Background(bgFill));
+		
+		
+		
+	}
+	
+	private void createAnimations() {
+		pt = new Timeline();
+		pt.setCycleCount(1);
+		
+		//Update every 32 ms ~ 30FPS
+		timeline = new Timeline( new KeyFrame( Duration.millis(32) , 
+				ae ->  { 
+					board.renderBoard(updatedCells);
+					updatedCells.clear();
+					renderPlayer();
+					} ) );
+
+		timeline.setCycleCount(Animation.INDEFINITE);
+		timeline.play();
+
+		
+	}
+	
+	
+	private void createBoard() {
+		CellSupplier<MapCell> cs = (x,y) -> { 
+			//System.out.println("New Map Cell: "+x+","+y);
+			MapCell mc = new MapCell();
+			mc.getCoord().x = x;
+			mc.getCoord().y = y;
+			return mc;
+		};
+		
+		CellEvaluator<MapCell> ce = (b) -> {
+			if( b == null) { return false; } else {
+			return b.getVisited(); } };
+		
+		CellRenderer<MapCell> cr = (g,x,y,cellsize,d) -> {
+			x = x*cellsize;
+			y = y*cellsize;
+			
+			g.setLineWidth(2.0);
+			
+			if(d != null && d.getVisited()) {
+				if(d.end == true) {
+					g.setFill(Color.RED);
+				} else if(d.start == true) {
+					g.setFill(Color.GREEN);
+				} else {
+					g.setFill(Color.ORANGE);
+				}
+				g.fillRect(x, y, cellsize, cellsize);
+				
+				//Draw Walls
+				List<Dir> dirs = d.getDirs();
+				if( !dirs.contains(Dir.NORTH) ) {
+					//Draw northern Wall
+					g.strokeLine(x,y,x+cellsize,y);
+				}
+				if(!dirs.contains(Dir.SOUTH)) {
+					//Draw Southern wall
+					g.strokeLine(x, y+cellsize, x+cellsize, y+cellsize);
+				}
+				if(!dirs.contains(Dir.EAST)) {
+					//Draw Eastern wall
+					g.strokeLine(x+cellsize, y, x+cellsize, y+cellsize);
+				}
+				if(!dirs.contains(Dir.WEST)) {
+					//Draw western wall
+					g.strokeLine(x,y,x,y+cellsize);
+				}
+				
+			} else {
+				g.setFill(Color.CADETBLUE);
+				g.fillRect(x, y, cellsize, cellsize);
+				g.strokeRect(x, y, cellsize, cellsize);
+			}
+		};
+		
+		board = new BoardCanvas<>(cs,ce,cr);
+	}	
+	
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+		
+		mainWindow = primaryStage;
+		mainWindow.show();
+		
+		initStuff();
+
+		VBox vb = new VBox();
+		sp = new StackPane();
+		
+		Group gr = new Group();
+		gr.getChildren().add(board);
+		gr.getChildren().add(playerLayer);
+		
 		sp.getChildren().add(gr);
 		sp.getChildren().add(lblStart);
 		
@@ -375,8 +401,8 @@ public class TestMaze extends Application {
 		
 		primaryStage.setScene(new Scene(vb));
 		primaryStage.setTitle("FXMaze");
-		buildGameOptions();
-		primaryStage.show();
+		
+		//primaryStage.show();
 		board.renderBoard();
 		renderPlayer();
 		primaryStage.setOnCloseRequest( (handler) -> { saveProperties(); }  );
@@ -385,16 +411,15 @@ public class TestMaze extends Application {
 	
 	private void loadProperties() {
 		Preferences prefs = Preferences.userNodeForPackage(this.getClass());
-		CellsWide.set(prefs.getInt("CellsWide", 10));
-		CellsHigh.set(prefs.getInt("CellsHigh", 10));
-		CellSize.set(prefs.getInt("CellSize", 25));
-		StretchLength.set(prefs.getInt("StretchLength", 10));
-		playMusicProperty.set(prefs.getBoolean("PlayMusic", false));
-		//mp.setVolume(prefs.getDouble("MusicVolume", 0.50));
-		volumeProperty.set(prefs.getDouble("MusicVolume", 0.5));
-		showMazeGeneration.set(prefs.getBoolean("SHOW_GENERATION", true));
+		dlgGameOptions.cellsWideProperty().set(prefs.getInt("CellsWide", 10));
+		dlgGameOptions.cellsHighProperty().set(prefs.getInt("CellsHigh", 10));
+		dlgGameOptions.cellSizeProperty().set(prefs.getInt("CellSize", 25));
+		dlgGameOptions.stretchLengthProperty().set(prefs.getInt("StretchLength", 10));
+		dlgGameOptions.playMusicProperty().set(prefs.getBoolean("PlayMusic", false));
+		dlgGameOptions.musicVolumeProperty().set(prefs.getDouble("MusicVolume", 0.5));
+		dlgGameOptions.showGenerationProperty().set(prefs.getBoolean("SHOW_GENERATION", true));
 		Level = prefs.getInt("LastLevel", 1);
-		txtSeed.setText(prefs.get("GameSeed", "MazeCraze"));
+		dlgGameOptions.gameSeedProperty().set(prefs.get("GameSeed", "MazeCraze"));
 	}
 
 	protected Animation fadeOut(Node n) {
@@ -461,7 +486,7 @@ public class TestMaze extends Application {
 	
 	protected void buildCredits() {
 		if(dlgCredits == null) {
-			dlgCredits = new Dialog<>();
+			
 			WebView wv = new WebView();
 			dlgCredits.getDialogPane().setContent(wv);
 			wv.getEngine().load(this.getClass().getResource("resources/Credits.html").toString());
@@ -475,62 +500,7 @@ public class TestMaze extends Application {
 			
 		}
 	}
-	
-	protected void buildGameOptions() {
-		if(dlgGameOptions == null) {
-			dlgGameOptions = new Dialog<>();
-			dlgGameOptions.initStyle(StageStyle.UTILITY);
-			dlgGameOptions.initOwner(mainWindow);
-			
-			ChangeListener<Object> chrebuild = (Ob,oldValue,newValue) -> {
-				mazePropertyChange = true;
-			};
-			
-			GridPane grid = new GridPane();
-			grid.setHgap(10);
-			grid.setVgap(10);
-			
-			grid.add(new Label("Game Seed:"),0,0);
-			grid.add(txtSeed,1,0);
-			txtSeed.textProperty().addListener(chrebuild);
-			grid.add(new Label("Cell Size:"),0,1);
-			grid.add(spnCell,1,1);
-			grid.add(new Label("Grid Width:"),0,2);
-			grid.add(spnWidth,1,2);
-			spnWidth.valueProperty().addListener(chrebuild);
-			grid.add(new Label("GridHeight:"),0,3);
-			grid.add(spnHeight,1,3);
-			spnHeight.valueProperty().addListener(chrebuild);
-			grid.add(new Label("Path Stretch Length"),0,4);
-			Spinner<Integer> spnStretch = new Spinner<>(2,512,StretchLength.get(),1);
-			StretchLength.bind(spnStretch.valueProperty());
-			grid.add(spnStretch, 1, 4);
-			
-			CheckBox cbMusic = new CheckBox("Play Game Music");
-				cbMusic.setSelected(playMusicProperty.get());
-				playMusicProperty.bindBidirectional(cbMusic.selectedProperty());
-			Slider slMusicVolume = new Slider(0,1,0.01);
-				slMusicVolume.setValue(mp.volumeProperty().get());
-				//mp.volumeProperty().bind(slMusicVolume.valueProperty());
-				volumeProperty.bind(slMusicVolume.valueProperty());
-			grid.add(slMusicVolume, 1, 5);
-			grid.add(cbMusic, 0, 5);
-			CheckBox cbShowGridGen = new CheckBox("Show Maze Generation");
-				cbShowGridGen.setSelected(showMazeGeneration.get());
-				showMazeGeneration.bind(cbShowGridGen.selectedProperty());
-			
-			grid.add(cbShowGridGen, 0, 6);	
-				
-			ButtonType btnSaveOptions = new ButtonType("Save & Close",ButtonData.OK_DONE);
-			dlgGameOptions.getDialogPane().getButtonTypes().add(btnSaveOptions);
-		
-			dlgGameOptions.getDialogPane().setContent(grid);
-			dlgGameOptions.setTitle("Game Options");
-		}
-	}
-	
-	
-	
+
 	protected class genTask extends Task<Void> {
 
 		//protected final String initSeed;
@@ -550,7 +520,7 @@ public class TestMaze extends Application {
 				play321go(sp);
 			});
 			
-			board.setSeed(txtSeed.getText(),Level);
+			board.setSeed(dlgGameOptions.gameSeedProperty().get(),Level);
 			 
 			board.reset();
 			resetPlayer();
@@ -559,7 +529,7 @@ public class TestMaze extends Application {
 		}
 		
 		public genTask() {
-			this.showGeneration = showMazeGeneration.getValue();
+			this.showGeneration = dlgGameOptions.showGenerationProperty().getValue();
 			mainWindow.setTitle("FX Maze - Level: "+Level);
 			init();
 		}
@@ -600,11 +570,11 @@ public class TestMaze extends Application {
 									
 									saveProperties();
 									
-									if(mazePropertyChange) {
+									if(dlgGameOptions.mazeChangedProperty().get()) {
 										playProperty.set(false);
 										lblStart.setOpacity(1);
 										Level = 1;
-										mazePropertyChange = false;
+										dlgGameOptions.mazeChangedProperty().set(false);
 									}
 									
 									board.renderBoard();
@@ -614,6 +584,7 @@ public class TestMaze extends Application {
 								}
 							}
 						} );
+			
 			MenuItem miRestart = new MenuItem("Restart Level");
 			miRestart.setOnAction( (action) -> {
 				//taskHandle = new genTask();
@@ -631,9 +602,8 @@ public class TestMaze extends Application {
 			});	
 			
 			CheckMenuItem miPlaySound = new CheckMenuItem("Play Music");
-			miPlaySound.selectedProperty().bindBidirectional(playMusicProperty);
 			
-			
+			miPlaySound.selectedProperty().bindBidirectional(dlgGameOptions.playMusicProperty());
 			mOptions.getItems().addAll(miGameOptions,miRestart,miLevelReset,miPlaySound);
 
 		Menu mHelp = new Menu("Help");
@@ -649,14 +619,15 @@ public class TestMaze extends Application {
 	
 	private void saveProperties() {
 		Preferences prefs = Preferences.userNodeForPackage(this.getClass());
-		prefs.putInt("CellsWide", CellsWide.get());
-		prefs.putInt("CellsHigh", CellsHigh.get());
-		prefs.putInt("CellSize", CellSize.get());
-		prefs.putBoolean("PlayMusic", playMusicProperty.get());
-		prefs.putDouble("MusicVolume", mp.getVolume() );
-		prefs.putBoolean("SHOW_GENERATION", showMazeGeneration.get());
-		prefs.putInt("StretchLength", StretchLength.get());
+		prefs.putInt("CellsWide", dlgGameOptions.cellsWideProperty().get());
+		prefs.putInt("CellsHigh", dlgGameOptions.cellsHighProperty().get());
+		prefs.putInt("CellSize", dlgGameOptions.cellSizeProperty().get());
+		prefs.putBoolean("PlayMusic", dlgGameOptions.playMusicProperty().get());
+		prefs.putDouble("MusicVolume", dlgGameOptions.musicVolumeProperty().get() );
+		prefs.putBoolean("SHOW_GENERATION", dlgGameOptions.showGenerationProperty().get());
+		prefs.putInt("StretchLength", dlgGameOptions.stretchLengthProperty().get());
 		prefs.putInt("LastLevel", Level);
+		prefs.put("GameSeed", dlgGameOptions.gameSeedProperty().get() );
 	}
 
 	public void resetPlayer() {
@@ -685,9 +656,7 @@ public class TestMaze extends Application {
 	protected ArrayList<MapCell> cellsWithOptions;
 	
 	public MapCell generate() {
-		//Start at 0,0;
-		
-		if(last == null) {
+		if(last == null) { //new Run
 			lx = 0;
 			ly = 0;
 			cellsWithOptions = new ArrayList<>();
@@ -709,7 +678,7 @@ public class TestMaze extends Application {
 				a.clear();
 				c.setEnd();
 			}
-			if(a.size() == 0 || spancount > StretchLength.get()) {
+			if(a.size() == 0 || spancount > dlgGameOptions.stretchLengthProperty().get()) {
 				if(spancount > 10) {
 					//System.out.println("Spancount reached");
 					spancount = 0; 
@@ -720,11 +689,10 @@ public class TestMaze extends Application {
 				} else {
 					//Backtrack until we find a cell with available Directions
 					updatedCells.add(c.getCoord());
-					Random r = new Random(txtSeed.getText().hashCode());
+					Random r = new Random(dlgGameOptions.gameSeedProperty().get().hashCode());
 					while(a.size() < 1) {
 						int index = r.nextInt(cellsWithOptions.size());
 						c = cellsWithOptions.get(index);
-						//c = c.getParent();
 						lx = c.getCoord().x;
 						ly = c.getCoord().y;
 						a = board.available(lx,ly);
