@@ -59,6 +59,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 
 public class TestMaze extends Application {
 
@@ -69,6 +70,9 @@ public class TestMaze extends Application {
 	protected Coord playerCoord  = new Coord();
 	protected SimpleDoubleProperty playerX = new SimpleDoubleProperty(0),playerY = new SimpleDoubleProperty(0);
 	protected Canvas playerLayer;
+
+	//This one tracks changes on the maze size, and seed to see if the maze needs to be regenerated
+	protected Boolean mazePropertyChange = false;
 	
 	protected Task<Void> taskHandle = null;
 	protected Font lblFont;
@@ -105,6 +109,7 @@ public class TestMaze extends Application {
 		playMusicProperty = new SimpleBooleanProperty(false),
 		playProperty = new SimpleBooleanProperty(false),
 		showMazeGeneration = new SimpleBooleanProperty(true);
+	protected final SimpleDoubleProperty volumeProperty = new SimpleDoubleProperty();
 		
 	protected StackPane sp;
 	protected Label lblStart;
@@ -118,12 +123,15 @@ public class TestMaze extends Application {
 				
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_06_Searching.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		mp.volumeProperty().bind(volumeProperty);
 		playList.add(mp);
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_05_Come_and_Find_Me.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		mp.volumeProperty().bind(volumeProperty);
 		playList.add(mp);
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_Prologue.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		mp.volumeProperty().bind(volumeProperty);
 		playList.add(mp);
 		
 		playerCoord.x = 0;
@@ -382,7 +390,8 @@ public class TestMaze extends Application {
 		CellSize.set(prefs.getInt("CellSize", 25));
 		StretchLength.set(prefs.getInt("StretchLength", 10));
 		playMusicProperty.set(prefs.getBoolean("PlayMusic", false));
-		mp.setVolume(prefs.getDouble("MusicVolume", 0.50));
+		//mp.setVolume(prefs.getDouble("MusicVolume", 0.50));
+		volumeProperty.set(prefs.getDouble("MusicVolume", 0.5));
 		showMazeGeneration.set(prefs.getBoolean("SHOW_GENERATION", true));
 		Level = prefs.getInt("LastLevel", 1);
 		txtSeed.setText(prefs.get("GameSeed", "MazeCraze"));
@@ -473,18 +482,25 @@ public class TestMaze extends Application {
 			dlgGameOptions.initStyle(StageStyle.UTILITY);
 			dlgGameOptions.initOwner(mainWindow);
 			
+			ChangeListener<Object> chrebuild = (Ob,oldValue,newValue) -> {
+				mazePropertyChange = true;
+			};
+			
 			GridPane grid = new GridPane();
 			grid.setHgap(10);
 			grid.setVgap(10);
 			
 			grid.add(new Label("Game Seed:"),0,0);
 			grid.add(txtSeed,1,0);
+			txtSeed.textProperty().addListener(chrebuild);
 			grid.add(new Label("Cell Size:"),0,1);
 			grid.add(spnCell,1,1);
 			grid.add(new Label("Grid Width:"),0,2);
 			grid.add(spnWidth,1,2);
+			spnWidth.valueProperty().addListener(chrebuild);
 			grid.add(new Label("GridHeight:"),0,3);
 			grid.add(spnHeight,1,3);
+			spnHeight.valueProperty().addListener(chrebuild);
 			grid.add(new Label("Path Stretch Length"),0,4);
 			Spinner<Integer> spnStretch = new Spinner<>(2,512,StretchLength.get(),1);
 			StretchLength.bind(spnStretch.valueProperty());
@@ -495,7 +511,8 @@ public class TestMaze extends Application {
 				playMusicProperty.bindBidirectional(cbMusic.selectedProperty());
 			Slider slMusicVolume = new Slider(0,1,0.01);
 				slMusicVolume.setValue(mp.volumeProperty().get());
-				mp.volumeProperty().bind(slMusicVolume.valueProperty());
+				//mp.volumeProperty().bind(slMusicVolume.valueProperty());
+				volumeProperty.bind(slMusicVolume.valueProperty());
 			grid.add(slMusicVolume, 1, 5);
 			grid.add(cbMusic, 0, 5);
 			CheckBox cbShowGridGen = new CheckBox("Show Maze Generation");
@@ -580,9 +597,16 @@ public class TestMaze extends Application {
 									taskHandle.cancel();
 								}
 								if(result.get().getButtonData() == ButtonData.OK_DONE) {
-									playProperty.set(false);
-									lblStart.setOpacity(1);
+									
 									saveProperties();
+									
+									if(mazePropertyChange) {
+										playProperty.set(false);
+										lblStart.setOpacity(1);
+										Level = 1;
+										mazePropertyChange = false;
+									}
+									
 									board.renderBoard();
 									if(!sp.getChildren().contains(lblStart)) {
 										sp.getChildren().add(lblStart);
