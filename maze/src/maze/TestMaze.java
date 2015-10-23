@@ -54,6 +54,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
+import javafx.scene.web.WebView;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -449,9 +450,25 @@ public class TestMaze extends Application {
 		
 	}
 	
+	protected void buildCredits() {
+		if(dlgCredits == null) {
+			dlgCredits = new Dialog<>();
+			WebView wv = new WebView();
+			dlgCredits.getDialogPane().setContent(wv);
+			wv.getEngine().load(this.getClass().getResource("resources/Credits.html").toString());
+			
+			wv.setPrefSize(640, 480);
+			
+			dlgCredits.initStyle(StageStyle.UTILITY);
+			dlgCredits.initOwner(mainWindow);
+			ButtonType btnSaveOptions = new ButtonType("OK!",ButtonData.OK_DONE);
+			dlgCredits.getDialogPane().getButtonTypes().add(btnSaveOptions);
+			
+		}
+	}
+	
 	protected void buildGameOptions() {
 		if(dlgGameOptions == null) {
-			
 			dlgGameOptions = new Dialog<>();
 			dlgGameOptions.initStyle(StageStyle.UTILITY);
 			dlgGameOptions.initOwner(mainWindow);
@@ -597,6 +614,7 @@ public class TestMaze extends Application {
 
 		Menu mHelp = new Menu("Help");
 			MenuItem miAbout = new MenuItem("About");
+			miAbout.setOnAction( (ma) -> { buildCredits(); dlgCredits.show();} );
 			MenuItem miHelp = new MenuItem("Show Help");
 		mHelp.getItems().addAll(miAbout,miHelp);	
 		
