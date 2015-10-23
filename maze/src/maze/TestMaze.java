@@ -1,5 +1,6 @@
 package maze;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
@@ -24,6 +26,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
@@ -111,7 +114,7 @@ public class TestMaze extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		playList = new ArrayList<>();
 		mainWindow = primaryStage;
-		
+				
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_06_Searching.mp3").toString()));
 		mp.setCycleCount(MediaPlayer.INDEFINITE);
 		playList.add(mp);
@@ -199,6 +202,15 @@ public class TestMaze extends Application {
 		};
 		
 		board = new BoardCanvas<>(cs,ce,cr);
+		
+		playMusicProperty.addListener((ob,oldValue,newValue) -> {
+			if(newValue && playProperty.get()) {
+				//if we are playing, start the music, else just set the property
+				playList.get(Level % playList.size()).play();
+			} else if( !newValue && playProperty.get()) {
+				playList.forEach( (media) -> media.stop() ); 
+			}
+		}) ;
 		
 		playerLayer.setOnKeyPressed( (keyEvent) -> { keyEvent.consume(); });
 		playerLayer.setOnKeyReleased( (keyEvent) -> {
@@ -463,7 +475,7 @@ public class TestMaze extends Application {
 			
 			CheckBox cbMusic = new CheckBox("Play Game Music");
 				cbMusic.setSelected(playMusicProperty.get());
-				playMusicProperty.bind(cbMusic.selectedProperty());
+				playMusicProperty.bindBidirectional(cbMusic.selectedProperty());
 			Slider slMusicVolume = new Slider(0,1,0.01);
 				slMusicVolume.setValue(mp.volumeProperty().get());
 				mp.volumeProperty().bind(slMusicVolume.valueProperty());
@@ -563,9 +575,10 @@ public class TestMaze extends Application {
 						} );
 			MenuItem miRestart = new MenuItem("Restart Level");
 			miRestart.setOnAction( (action) -> {
-				taskHandle = new genTask();
-				Thread t = new Thread(taskHandle);
-				t.start();
+				//taskHandle = new genTask();
+				//Thread t = new Thread(taskHandle);
+				//t.start();
+				resetPlayer();
 			});
 			
 			MenuItem miLevelReset = new MenuItem("Level Reset to 1");
@@ -576,7 +589,11 @@ public class TestMaze extends Application {
 				t.start();
 			});	
 			
-			mOptions.getItems().addAll(miGameOptions,miRestart,miLevelReset);
+			CheckMenuItem miPlaySound = new CheckMenuItem("Play Music");
+			miPlaySound.selectedProperty().bindBidirectional(playMusicProperty);
+			
+			
+			mOptions.getItems().addAll(miGameOptions,miRestart,miLevelReset,miPlaySound);
 
 		Menu mHelp = new Menu("Help");
 			MenuItem miAbout = new MenuItem("About");
