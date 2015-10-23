@@ -415,7 +415,7 @@ public class TestMaze extends Application {
 		dlgGameOptions.cellsHighProperty().set(prefs.getInt("CellsHigh", 10));
 		dlgGameOptions.cellSizeProperty().set(prefs.getInt("CellSize", 25));
 		dlgGameOptions.stretchLengthProperty().set(prefs.getInt("StretchLength", 10));
-		dlgGameOptions.playMusicProperty().set(prefs.getBoolean("PlayMusic", false));
+		dlgGameOptions.playMusicProperty().set(prefs.getBoolean("PlayMusic", true));
 		dlgGameOptions.musicVolumeProperty().set(prefs.getDouble("MusicVolume", 0.5));
 		dlgGameOptions.showGenerationProperty().set(prefs.getBoolean("SHOW_GENERATION", true));
 		Level = prefs.getInt("LastLevel", 1);
@@ -485,20 +485,18 @@ public class TestMaze extends Application {
 	}
 	
 	protected void buildCredits() {
-		if(dlgCredits == null) {
+		
 			
 			WebView wv = new WebView();
 			dlgCredits.getDialogPane().setContent(wv);
 			wv.getEngine().load(this.getClass().getResource("resources/Credits.html").toString());
-			
 			wv.setPrefSize(640, 480);
-			
 			dlgCredits.initStyle(StageStyle.UTILITY);
-			dlgCredits.initOwner(mainWindow);
+			//dlgCredits.initOwner(mainWindow);
 			ButtonType btnSaveOptions = new ButtonType("OK!",ButtonData.OK_DONE);
 			dlgCredits.getDialogPane().getButtonTypes().add(btnSaveOptions);
 			
-		}
+		
 	}
 
 	protected class genTask extends Task<Void> {
@@ -608,7 +606,7 @@ public class TestMaze extends Application {
 
 		Menu mHelp = new Menu("Help");
 			MenuItem miAbout = new MenuItem("About");
-			miAbout.setOnAction( (ma) -> { buildCredits(); dlgCredits.show();} );
+			miAbout.setOnAction( (ma) -> { dlgCredits.show();} );
 			MenuItem miHelp = new MenuItem("Show Help");
 		mHelp.getItems().addAll(miAbout,miHelp);	
 		
