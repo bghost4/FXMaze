@@ -63,18 +63,18 @@ public class BoardCanvas<T> extends Canvas {
 		//Listeners
 		w.addListener( (ob,oldValue,newValue) ->  {
 			this.setWidth((int)newValue*cellsize.get());
-			//initializeBoard();
+			initializeBoard();
 			//renderBoard();
 		});
 		h.addListener((ob,oldValue,newValue) ->  {
 			this.setHeight((int)newValue*cellsize.get());
-			//initializeBoard();
+			initializeBoard();
 			//renderBoard();
 		});
 		cellsize.addListener( (ob,oldValue,newValue) -> {
 			this.setWidth(w.get()*(int)newValue);
 			this.setHeight(h.get()*(int)newValue);
-			//initializeBoard();
+			initializeBoard();
 			//renderBoard();
 		});
 		
@@ -178,6 +178,10 @@ public class BoardCanvas<T> extends Canvas {
 		Coord[] a = l.toArray(new Coord[] {} );
 		for(Coord cell : a ) {
 			T value = getValue(cell.x,cell.y);
+			if(value == null) {
+				value = (cs.get(cell.x, cell.y));
+				setValue(cell.x,cell.y,value);
+			}
 			ren.renderCell(getGraphicsContext2D(), cell.x, cell.y, cellsize.get(), value);
 		}
 	}

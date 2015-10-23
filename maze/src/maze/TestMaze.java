@@ -105,12 +105,22 @@ public class TestMaze extends Application {
 	protected StackPane sp;
 	protected Label lblStart;
 	
+	ArrayList<MediaPlayer> playList;
+	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		
+		playList = new ArrayList<>();
 		mainWindow = primaryStage;
 		
 		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_06_Searching.mp3").toString()));
+		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		playList.add(mp);
+		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_05_Come_and_Find_Me.mp3").toString()));
+		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		playList.add(mp);
+		mp = new MediaPlayer(new Media(this.getClass().getResource("resources/music/Eric_Skiff_Prologue.mp3").toString()));
+		mp.setCycleCount(MediaPlayer.INDEFINITE);
+		playList.add(mp);
 		
 		playerCoord.x = 0;
 		playerCoord.y = 0;
@@ -290,8 +300,11 @@ public class TestMaze extends Application {
 
 		playProperty.addListener( (ob,oldValue,newValue) -> {
 			if(newValue && playMusicProperty.get()) {
-				mp.play();
-			} else  { mp.stop(); }
+				int levelSong = Level % playList.size();
+				playList.get(levelSong).play();
+			} else  {
+				playList.forEach((media) -> media.stop() );  
+				}
 		} );
 		
 		
@@ -556,9 +569,14 @@ public class TestMaze extends Application {
 			});
 			
 			MenuItem miLevelReset = new MenuItem("Level Reset to 1");
-			//miLevelReset.	
+			miLevelReset.setOnAction( (event) -> {
+				Level = 1;
+				taskHandle = new genTask();
+				Thread t = new Thread(taskHandle);
+				t.start();
+			});	
 			
-			mOptions.getItems().addAll(miGameOptions,miRestart);
+			mOptions.getItems().addAll(miGameOptions,miRestart,miLevelReset);
 
 		Menu mHelp = new Menu("Help");
 			MenuItem miAbout = new MenuItem("About");
